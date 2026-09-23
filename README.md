@@ -41,7 +41,7 @@ Leave the values blank — the script will prompt you to log in and fill them in
 python get_macros.py
 ```
 
-**Or double-click `run_macros.bat`** for a one-click run (handles the venv activation for you, works from any location).
+**Or double-click `getMacros.bat`** for a one-click run (handles the venv activation for you, works from any location).
 
 On first run, or whenever your session has expired, a browser window will open for you to log in to MyFitnessPal manually. Once logged in, confirm in the terminal, and your session cookies are saved to `.env` automatically for next time.
 
@@ -62,4 +62,3 @@ By default, it pulls the last 7 days and writes `week_macros.csv` in the project
 
 - Cookies are stored locally in `.env`.
 - If MyFitnessPal changes its page structure, the parser in `macros.py` may need updating — check `parse_macros_from_html` first if numbers stop coming through correctly.
-- At time of committing, camoufox successfully bypasses cloudflare check but this may not be case in future, may need to require manual fallback
