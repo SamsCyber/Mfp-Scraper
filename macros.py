@@ -1,5 +1,4 @@
 import os
-from inquirer import text
 import requests
 from bs4 import BeautifulSoup
 from auth import ensure_authenticated

@@ -1,6 +1,3 @@
-import openpyxl
-import os
-from openpyxl.styles import Font, Alignment
 import csv
 
 def export_to_csv(days: list[dict], start_date: str, end_date: str, output_path: str):
