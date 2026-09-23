@@ -62,3 +62,4 @@ By default, it pulls the last 7 days and writes `week_macros.csv` in the project
 
 - Cookies are stored locally in `.env`.
 - If MyFitnessPal changes its page structure, the parser in `macros.py` may need updating — check `parse_macros_from_html` first if numbers stop coming through correctly.
+- At time of committing, camoufox successfully bypasses cloudflare check but this may not be case in future, may need to require manual fallback
