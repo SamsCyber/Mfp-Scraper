@@ -1,4 +1,7 @@
 from pathlib import Path
+from time import monotonic
+from urllib.parse import urlparse
+from playwright.sync_api import Error as PlaywrightError
 from camoufox import Camoufox
 from dotenv import load_dotenv, set_key
 import requests
@@ -7,8 +10,11 @@ import os
 ENV_PATH = Path(__file__).resolve().parent / '.env'
 load_dotenv(dotenv_path=ENV_PATH)
 
+DIARY_URL = "https://www.myfitnesspal.com/food/diary"
+SESSION_COOKIE = "__Secure-next-auth.session-token"
+LOGIN_TIMEOUT_SECONDS = 120
 REQUIRED_COOKIES = {
-    "__Secure-next-auth.session-token": "MFP_SESSION_TOKEN",
+    SESSION_COOKIE: "MFP_SESSION_TOKEN",
     "_mfp_session": "MFP_MFP_SESSION",
 }
 
@@ -38,24 +44,16 @@ def _save_cookie(env_key: str, value: str):
     
 def relogin_camoufox():
     print("Opening browser for login (camoufox)...")
-    with Camoufox(headless=False, geoip=True) as browser:
-        page = browser.new_page()
-        page.goto("https://www.myfitnesspal.com/food/diary")
+    try:
+        cookie_map = _capture_cookies_with_browser()
+    except PlaywrightError as e:  # closed the window, or the diary never loaded
+        print(f"Browser login didn't complete: {e}")
+        cookie_map = None
+
+    if cookie_map is None:
+        relogin_manual()
+        return
     
-
-        print("Log in manually in the browser window.")
-        answer = input("Did it work and are you ready to continue? (y/n): ").strip().lower()
-        
-        if answer != "y":
-            print("Okay, abandoning camoufox flow.")
-            browser.close()
-            relogin_manual()
-            return
-
-        cookies = page.context.cookies()
-        browser.close()
-
-    cookie_map = {c["name"]: c["value"] for c in cookies}
     missing = [name for name in REQUIRED_COOKIES if name not in cookie_map]
 
     if missing:
@@ -72,6 +70,42 @@ def relogin_camoufox():
         return
 
     print("Session refreshed and saved to .env.")
+
+    
+def _wait_for_login(page, timeout_s) -> bool:
+    """Poll until every required cookie exists, redirecting the browser to the diary if needed."""
+    required = set(REQUIRED_COOKIES)
+    deadline = monotonic() + timeout_s
+
+    while monotonic() < deadline:
+        names = {c["name"] for c in page.context.cookies()}
+
+        if required <= names:
+            return True
+
+        # Logged in, but MFP sent us somewhere other than the diary -
+        # go there, since that's what sets _mfp_session
+        if SESSION_COOKIE in names and urlparse(page.url).path != "/food/diary":
+            page.goto(DIARY_URL)
+
+        page.wait_for_timeout(1000)
+
+    return False
+
+def _capture_cookies_with_browser():
+    """Returns a {name: value} cookie dict, or None if login didn't complete."""
+    with Camoufox(headless=False, geoip=True) as browser:
+        page = browser.new_page()
+        page.goto(DIARY_URL)
+
+        print(f"Log in in the browser window (waiting up to {LOGIN_TIMEOUT_SECONDS // 60} minutes)...")
+        if not _wait_for_login(page, LOGIN_TIMEOUT_SECONDS):
+            print("Timed out waiting for login.")
+            return None
+
+        page.wait_for_selector("#diary-table", timeout=30_000)
+        print("Login detected.")
+        return {c["name"]: c["value"] for c in page.context.cookies()}
 
 def relogin_manual():
     """
