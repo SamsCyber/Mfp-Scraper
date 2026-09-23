@@ -8,12 +8,12 @@ def export_to_csv(days: list[dict], start_date: str, end_date: str, output_path:
     with open(output_path, "w", newline="", encoding="utf-8") as f:
         writer = csv.writer(f)
         writer.writerow([f"{start_date} to {end_date}"])
-        writer.writerow(["Protein (g)", "Carbs (g)", "Fats (g)"])
+        writer.writerow(["Date", "Protein (g)", "Carbs (g)", "Fats (g)"])
         for day in days:
-            writer.writerow([day["protein_g"], day["carbs_g"], day["fat_g"]])
- 
+            writer.writerow([day["date"], day["protein_g"], day["carbs_g"], day["fat_g"]])
+
     print(f"Saved to {output_path}")
     print(f"{start_date} to {end_date}")
-    print("Protein (g), Carbs (g), Fats (g)")
+    print("Date, Protein (g), Carbs (g), Fats (g)")
     for day in days:
-        print(f"{day['protein_g']}, {day['carbs_g']}, {day['fat_g']}")
+        print(f"{day['date']}, {day['protein_g']}, {day['carbs_g']}, {day['fat_g']}")

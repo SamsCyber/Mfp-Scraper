@@ -16,7 +16,7 @@ def fetch_diary_page_html(date: str) -> str:
     response = requests.get(url, cookies=cookies)
     return response.text
 
-def parse_macros_from_html(html_content: str) -> dict:
+def parse_macros_from_html(html_content: str, date: str) -> dict:
     """
     Parse the HTML content of the diary page to extract total macros (calories, protein, carbs, fat).
     Returns a dictionary with the total values.
@@ -43,7 +43,7 @@ def parse_macros_from_html(html_content: str) -> dict:
     carbs = clean_number(cells[2].find("span", class_="macro-value").get_text())
     fat = clean_number(cells[3].find("span", class_="macro-value").get_text())
     protein = clean_number(cells[4].find("span", class_="macro-value").get_text())
-    return {"calories": calories, "carbs_g": carbs, "fat_g": fat, "protein_g": protein}
+    return {"date": date, "calories": calories, "carbs_g": carbs, "fat_g": fat, "protein_g": protein}
 
 
 def get_macros_for_range(date_start: str, date_end: str) -> dict:
@@ -61,11 +61,12 @@ def get_macros_for_range(date_start: str, date_end: str) -> dict:
     results = []
     
     for day in datetime_range:
-        html_content = fetch_diary_page_html(day.strftime("%Y-%m-%d"))
+        date_string = day.strftime("%Y-%m-%d")
+        html_content = fetch_diary_page_html(date_string)
         debug_file_path = f"debug_output.html"
         with open(debug_file_path, "w", encoding="utf-8") as f:
             f.write(html_content)
-        results.append(parse_macros_from_html(html_content))
+        results.append(parse_macros_from_html(html_content, date_string))
     
     return {"start_date": date_start, "end_date": date_end, "results": results}
 
